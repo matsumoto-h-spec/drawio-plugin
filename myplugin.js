@@ -1,18 +1,15 @@
 Draw.loadPlugin(function(ui) {
-  // URLからセルIDを取得
-  var hash = window.location.hash;
-  var match = hash.match(/cellId=([^&]+)/);
-  var targetId = match ? match[1] : null;
+  var model = ui.editor.graph.getModel();
+  var cellIds = [];
   
-  if (targetId) {
-    var cell = ui.editor.graph.getModel().getCell(targetId);
-    if (cell) {
-      ui.editor.graph.setSelectionCell(cell);
-      ui.editor.graph.scrollCellToVisible(cell, true);
-      ui.editor.graph.zoomTo(1.5);
-      alert('✅ セル ' + targetId + ' を選択しました');
-    } else {
-      alert('❌ セル ' + targetId + ' が見つかりません');
+  // 全セルのIDを取得
+  for (var key in model.cells) {
+    var cell = model.cells[key];
+    if (cell && cell.id) {
+      cellIds.push(cell.id);
     }
   }
+  
+  // アラートで全セルIDを表示
+  alert('合計 ' + cellIds.length + ' 個のセル\n\nセルID:\n' + cellIds.join('\n'));
 });
