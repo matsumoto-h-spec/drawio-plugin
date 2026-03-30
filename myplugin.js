@@ -1,22 +1,22 @@
 Draw.loadPlugin(function(ui) {
     var graph = ui.editor.graph;
 
-    // ファイルとページの読み込み完了を待って実行
+    // 図面が読み込まれたタイミングで実行
     ui.editor.addListener('fileLoaded', function() {
-        // URL全体から target=〇〇 を探す
-        var urlStr = window.location.href;
-        var match = urlStr.match(/target=([^&?#]+)/);
-        var targetName = match ? decodeURIComponent(match[1]) : null;
-
-        if (targetName) {
-            // ロックされていても検索できるように設定を一時無視
+        // URLの末尾（#以降）から &target=図形名 を抽出
+        var hash = window.location.hash;
+        var match = hash.match(/target=([^&]+)/);
+        
+        if (match) {
+            var targetName = decodeURIComponent(match[1]);
             var model = graph.getModel();
             var cells = model.cells;
             var foundCell = null;
 
+            // 全セルから名前が一致するものを検索
             for (var id in cells) {
                 var cell = cells[id];
-                var label = graph.getLabel(cell).replace(/<[^>]*>/g, "").trim();
+                var label = (graph.getLabel(cell) || '').replace(/<[^>]*>/g, "").trim();
                 if (label === targetName) {
                     foundCell = cell;
                     break;
@@ -24,12 +24,16 @@ Draw.loadPlugin(function(ui) {
             }
 
             if (foundCell) {
-                // ロックされていても「選択」と「ズーム」を実行
+                // ロックを無視して選択を許可する一時設定
+                var oldIgnore = graph.isSelectionIgnored;
+                graph.isSelectionIgnored = function() { return false; };
+
+                // 図形を選択し、中央へズーム
                 graph.setSelectionCell(foundCell);
                 graph.scrollCellToVisible(foundCell, true);
-                
-                // 少しズームアップして見やすくする（お好みで）
-                graph.view.setScale(1.5); 
+                graph.view.setScale(1.2); // ズーム倍率（お好みで調整）
+
+                graph.isSelectionIgnored = oldIgnore; // 設定を戻す
             }
         }
     });
