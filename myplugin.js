@@ -1,9 +1,8 @@
 Draw.loadPlugin(function(ui) {
     var graph = ui.editor.graph;
 
-    // 図面が読み込まれたら実行
     ui.editor.addListener('fileLoaded', function() {
-        // URLの最後にある &target=図形名 を取得
+        // URLから &target=図形名 を探す
         var hash = window.location.hash;
         var match = hash.match(/target=([^&]+)/);
         
@@ -12,11 +11,10 @@ Draw.loadPlugin(function(ui) {
             var cells = graph.getModel().cells;
             var foundCell = null;
 
-            // 140個のセルを「テキスト（名前）」で検索
+            // 全セルをスキャンして名前が一致するものを探す
             for (var id in cells) {
                 var cell = cells[id];
                 var label = (graph.getLabel(cell) || '').replace(/<[^>]*>/g, "").trim();
-                
                 if (label === targetName) {
                     foundCell = cell;
                     break;
@@ -32,7 +30,7 @@ Draw.loadPlugin(function(ui) {
                 graph.scrollCellToVisible(foundCell, true);
                 graph.view.setScale(1.2); // ズーム倍率
 
-                graph.isSelectionIgnored = oldIgnore; // 設定を戻す
+                graph.isSelectionIgnored = oldIgnore;
             }
         }
     });
