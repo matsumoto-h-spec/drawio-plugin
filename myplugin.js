@@ -1,19 +1,21 @@
 Draw.loadPlugin(function(ui) {
     var graph = ui.editor.graph;
 
-    // ファイル読み込み完了時に実行
+    // ファイルとページの読み込み完了を待って実行
     ui.editor.addListener('fileLoaded', function() {
-        // 1. URLの「target」という文字の後ろを読み取る
-        var urlParams = new URLSearchParams(window.location.hash.replace('#', '?'));
-        var targetName = urlParams.get('target'); 
+        // URL全体から target=〇〇 を探す
+        var urlStr = window.location.href;
+        var match = urlStr.match(/target=([^&?#]+)/);
+        var targetName = match ? decodeURIComponent(match[1]) : null;
 
         if (targetName) {
+            // ロックされていても検索できるように設定を一時無視
             var model = graph.getModel();
+            var cells = model.cells;
             var foundCell = null;
 
-            // 2. 140個の中から「名前」が一致するセルを探して取得
-            for (var id in model.cells) {
-                var cell = model.cells[id];
+            for (var id in cells) {
+                var cell = cells[id];
                 var label = graph.getLabel(cell).replace(/<[^>]*>/g, "").trim();
                 if (label === targetName) {
                     foundCell = cell;
@@ -22,10 +24,12 @@ Draw.loadPlugin(function(ui) {
             }
 
             if (foundCell) {
-                // 3. graph.setSelectionCell(cell) で選択
+                // ロックされていても「選択」と「ズーム」を実行
                 graph.setSelectionCell(foundCell);
-                // 4. graph.scrollCellToVisible(cell, true) でズーム
                 graph.scrollCellToVisible(foundCell, true);
+                
+                // 少しズームアップして見やすくする（お好みで）
+                graph.view.setScale(1.5); 
             }
         }
     });
