@@ -2,37 +2,43 @@ Draw.loadPlugin(function(ui) {
     var graph = ui.editor.graph;
 
     ui.editor.addListener('fileLoaded', function() {
-        // URLの ?target=〇〇 を取得（認証エラー回避のためsearchParamsを使用）
-        var urlParams = new URLSearchParams(window.location.search);
-        var targetName = urlParams.get('target');
+        // URLからターゲット名を取得
+        var fullUrl = window.location.href;
+        var match = fullUrl.match(/target=([^&?#]+)/);
+        if (!match) return;
 
-        if (targetName) {
-            var decodedTarget = decodeURIComponent(targetName);
-            var model = graph.getModel();
-            var foundCell = null;
+        var targetName = decodeURIComponent(match[1]).trim();
+        console.log("◆検索開始ターゲット: [" + targetName + "]");
 
-            // 140個のセルから「授乳室2」を検索
-            for (var id in model.cells) {
-                var cell = model.cells[id];
-                var label = (graph.getLabel(cell) || '').replace(/<[^>]*>/g, "").trim();
+        var cells = graph.getModel().cells;
+        var foundCell = null;
+
+        for (var id in cells) {
+            var cell = cells[id];
+            // HTMLタグを除去し、前後スペースを消して純粋なテキストにする
+            var label = (graph.getLabel(cell) || '').replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
+            
+            if (label !== "") {
+                // コンソールに読み取った名前を流す（デバッグ用）
+                // console.log("チェック中: [" + label + "]"); 
                 
-                if (label === decodedTarget) {
+                if (label === targetName) {
                     foundCell = cell;
                     break;
                 }
             }
+        }
 
-            if (foundCell) {
-                // 背景がロックされていても強制的に選択・ズームする
-                var oldIgnore = graph.isSelectionIgnored;
-                graph.isSelectionIgnored = function() { return false; };
-
-                graph.setSelectionCell(foundCell);
-                graph.scrollCellToVisible(foundCell, true);
-                graph.view.setScale(1.5); // 少し大きくズーム
-
-                graph.isSelectionIgnored = oldIgnore;
-            }
+        if (foundCell) {
+            console.log("✅発見しました！ズームを実行します。");
+            var oldIgnore = graph.isSelectionIgnored;
+            graph.isSelectionIgnored = function() { return false; };
+            graph.setSelectionCell(foundCell);
+            graph.scrollCellToVisible(foundCell, true);
+            graph.view.setScale(1.5);
+            graph.isSelectionIgnored = oldIgnore;
+        } else {
+            console.error("❌図形が見つかりません。図面内の名前とURLの文字が完全一致しているか確認してください。");
         }
     });
 });
